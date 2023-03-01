@@ -27,7 +27,9 @@ class redidb {
 			if (typeof response.data.success == 'boolean' && !response.data.success)
 				throw new Error(response.data.message);
 
-			return response.data.map(obj => new Document(obj, collection));
+			if (Array.isArray(response.data))
+				return response.data.map(obj => new Document(obj, collection));
+			else return new Document(response.data, collection);
 		});
 	}
 
