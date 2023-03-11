@@ -29,6 +29,14 @@ class redidb {
 
 			if (Array.isArray(response.data))
 				return response.data.map(obj => new Document(obj, collection));
+			else if (
+				Object.keys(response.data).includes('created') &&
+				Object.keys(response.data).includes('data')
+			)
+				return {
+					created: response.data.created,
+					data: new Document(response.data.data, collection),
+				};
 			else return new Document(response.data, collection);
 		});
 	}

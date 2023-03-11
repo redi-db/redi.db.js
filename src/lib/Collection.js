@@ -62,7 +62,7 @@ class Collection {
 		return await this.redi.req('', 'DELETE', { filter }, this, this.link);
 	}
 
-	async getCount() {
+	async count() {
 		let response = await this.redi.req(
 			`/list?login=${this.redi.authorization.login}&password=${this.redi.authorization.password}`,
 			'GET',
