@@ -28,16 +28,16 @@ var exampleCollection = db.create('exampleDatabase', 'exampleCollection');
 await exampleCollection.create({ id: 1, money: 150 }, { id: 2, money: 150 }); // Returns first element
 ```
 
-**👖 Find the created user by ID**
+**👖 search the created user by ID**
 
 ```js
-await exampleCollection.findOne({ id: 1 }); // Returns an object with a data;
+await exampleCollection.searchOne({ id: 1 }); // Returns an object with a data;
 
 // { _id: ..., id: 1, money: 150 }
 // If the data does not exist - returns null
 
 // You can also get multiple datas at once.
-await exampleCollection.find({ money: 150 }); // Returns all datas with money == 150
+await exampleCollection.search({ money: 150 }); // Returns all datas with money == 150
 
 // [
 //     { _id: ..., id: 1, money: 150 },
@@ -46,12 +46,12 @@ await exampleCollection.find({ money: 150 }); // Returns all datas with money ==
 // ]
 ```
 
-**🩰 FindOrCreate method**
+**🩰 searchOrCreate method**
 
 ```js
 // If you don't know if you have a data with a certain ID, you can use this method.
 
-await exampleCollection.findOrCreate({ id: 3 }, { id: 3, burger: false });
+await exampleCollection.searchOrCreate({ id: 3 }, { id: 3, burger: false });
 
 // {
 //   created: true, // If created - true, else false
@@ -68,7 +68,7 @@ await exampleCollection.update({ id: 3 }, { burger: true }); // Return [ { _id: 
 **🔟 Get count of data in collection**
 
 ```js
-await exampleCollection.count(); // Returns number
+await exampleCollection.count({ burger: true }); // Returns number
 ```
 
 **🗑 Deleting a user model**
@@ -81,7 +81,7 @@ await exampleCollection.delete({ id: 3 }); // Returns [ { _id: ..., deleted: tru
 **🤞 You can use <Document>.$save() or $delete**
 
 ```js
-let found = await exampleCollection.findOne();
+let found = await exampleCollection.searchOne();
 if (!found) return;
 
 found.cool = true;
