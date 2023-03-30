@@ -2,7 +2,6 @@
 
 ```js
 const redidb = require('redi.db.js');
-
 const db = new redidb({
 	login: 'root',
 	password: 'root',

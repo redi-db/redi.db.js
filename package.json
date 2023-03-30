@@ -1,8 +1,9 @@
 {
 	"name": "redi.db.js",
-	"version": "4.0.0",
+	"version": "4.0.1",
 	"description": "Library for working with RediDB in Node.js",
 	"main": "redidb.js",
+	"types": "redidb.d.ts",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/redi-db/redi.db.js.git"
