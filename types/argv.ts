@@ -1,8 +1,10 @@
 export default interface Params {
-    ip:string
-    port:number
+	ip: string;
+	port: number;
 
-    login:string
-    password:string
-    useSSL?:false
+	login: string;
+	password: string;
+
+	websocket: boolean;
+	useSSL?: false;
 }

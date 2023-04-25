@@ -7,9 +7,22 @@ const db = new redidb({
 	password: 'root',
 
 	ip: '0.0.0.0',
-	useSSL: false, // Use "true" if your protocol uses https
-
 	port: 5000,
+
+	websocket: true, // Recommended for faster processing
+	useSSL: false, // Use "true" if your protocol uses https
+});
+
+db.on('connected', () => {
+	console.log('Connected!');
+});
+
+db.on('disconnect', () => {
+	console.log('Disconnected!');
+});
+
+db.on('error', err => {
+	console.log(`Handled error: ${err}`);
 });
 ```
 
@@ -87,4 +100,48 @@ found.cool = true;
 
 await found.$save(); // Return { _id: ..., updated: true / false }
 await found.$delete(); // Return { _id: ..., deleted: true / false }
+```
+
+**⌨️ TypeScript support**
+
+```ts
+import redidb from 'redi.db.js';
+import IDocument from 'redi.db.js/lib/Document';
+
+const db = new redidb({
+	ip: '0.0.0.0',
+	port: 5000,
+
+	login: 'root',
+	password: 'root',
+
+	websocket: true,
+});
+
+interface IUser extends IDocument {
+	id: number;
+}
+
+db.on('connected', async () => {
+	console.log('Connected to redidb and can work!');
+
+	const Users = db.create('GetClient', 'Users');
+	await Users.create({ id: 1 }).then(console.log);
+
+	const user = await Users.searchOne<IUser>({ id: 1 });
+	if (!user) return console.log('User with id 1 not found!');
+
+	user.id = 2;
+	await user.$save();
+
+	console.log(user);
+});
+
+db.on('disconnect', () => {
+	console.log('Connection to redidb is closed');
+});
+
+db.on('error', err => {
+	console.log(`Handled error: ${err}`);
+});
 ```

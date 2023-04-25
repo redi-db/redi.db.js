@@ -15,11 +15,13 @@ declare class Collection {
 			collection: string;
 		}
 	);
+
 	private redi: ClassDecorator;
 	private data: {
 		database: string;
 		collection: string;
 	};
+
 	create<T extends object>(...objects: T[]): Promise<ICreateRequest[]>;
 	search<T extends Document>(filter?: {}): Promise<T[]>;
 	searchOne<T extends Document>(filter?: {}): Promise<T | null>;

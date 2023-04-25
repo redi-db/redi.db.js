@@ -1,3 +1,3 @@
 export default interface IDocument {
-    readonly _id: string
+	readonly _id: string;
 }
