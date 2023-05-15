@@ -1,5 +1,7 @@
 interface Base {
     $max?: number;
+    $only?: string[];
+    $omit?: string[];
     $order?: {
         type: 'desc' | 'asc';
         by: string;
