@@ -120,16 +120,20 @@ const db = new redidb({
 
 interface IUser extends IDocument {
 	id: number;
+	block: Partial<{
+		status: boolean;
+		reason: string;
+	}>;
 }
 
 db.on('connected', async () => {
 	console.log('Connected to redidb and can work!');
 
 	const Users = db.create('GetClient', 'Users');
-	await Users.create({ id: 1 }).then(console.log);
+	await Users.create<IUser>({ id: 1 }).then(console.log);
 
-	const user = await Users.searchOne<IUser>({ id: 1 });
-	if (!user) return console.log('User with id 1 not found!');
+	const user = await Users.searchOne<IUser>({ id: 1, block: { status: false } });
+	if (!user) return console.log('User with id 1 not found or has been blocked!');
 
 	user.id = 2;
 	await user.$save();
