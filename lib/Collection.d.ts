@@ -35,6 +35,6 @@ declare class Collection {
 		created: boolean;
 		data: T;
 	}>;
-	delete<T extends Document>(filter?: Partial<Omit<T, '$save' | '$delete'>>): Promise<IDeleteRequest[]>;
-	count<T extends Document>(filter?: Partial<Omit<T, '$save' | '$delete'>>): Promise<number>;
+	delete<T extends Document>(filter?: IFilter<T> & Partial<Omit<T, '$save' | '$delete'>>): Promise<IDeleteRequest[]>;
+	count<T extends Document>(filter?: IFilter<T> & Partial<Omit<T, '$save' | '$delete'>>): Promise<number>;
 }
