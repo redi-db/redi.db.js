@@ -10,11 +10,11 @@ interface Base {
     $gt?: {
         by: string;
         value: number;
-    };
+    }[];
     $lt?: {
         by: string;
         value: number;
-    };
+    }[];
 }
 
 export default interface IFilter<T extends IFilterWithoutMax> extends Base {
