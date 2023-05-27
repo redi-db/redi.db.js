@@ -6,6 +6,11 @@ interface Base {
         type: 'desc' | 'asc';
         by: string;
     };
+    
+    $text?: {
+        by: string;
+        value: string;
+    }[];
 
     $gt?: {
         by: string;

@@ -1,8 +1,8 @@
 **🚪 Connecting to redi.db server**
 
 ```js
-const redidb = require('redi.db.js');
-const db = new redidb({
+const RediDB = require('redi.db.js');
+const db = new RediDB({
     login: 'root',
     password: 'root',
 
