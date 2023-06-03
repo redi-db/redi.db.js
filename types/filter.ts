@@ -6,20 +6,29 @@ interface Base {
         type: 'desc' | 'asc';
         by: string;
     };
-    
-    $text?: {
+
+    $text?: ({
         by: string;
         value: string;
-    }[];
+    } | {
+        by: string;
+        value: string;
+    }[]);
 
-    $gt?: {
+    $gt?: ({
         by: string;
         value: number;
-    }[];
-    $lt?: {
+    } | {
         by: string;
         value: number;
-    }[];
+    }[]);
+    $lt?: ({
+        by: string;
+        value: number;
+    } | {
+        by: string;
+        value: number;
+    }[]);
 }
 
 export default interface IFilter<T extends IFilterWithoutMax> extends Base {
