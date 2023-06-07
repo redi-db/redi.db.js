@@ -6,5 +6,6 @@ export default interface Params {
 	password: string;
 
 	websocket: boolean;
+
 	useSSL?: false;
 }

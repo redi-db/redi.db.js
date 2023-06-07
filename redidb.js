@@ -1,6 +1,7 @@
 const Collection = require('./lib/Collection');
 const EventEmitter = require('events');
 const WebSocket = require('ws');
+const PWS = require('pws')
 
 module.exports = class redidb extends EventEmitter {
 	constructor(argv) {
@@ -17,11 +18,24 @@ module.exports = class redidb extends EventEmitter {
 		};
 
 		if (this.method == 'WS') {
-			this.ws = new WebSocket(this.link);
-			this.ws.setMaxListeners(25000);
+			this.ws = new PWS(this.link, WebSocket);
 
-			this.ws.on('open', () => this.emit('connected'));
-			this.ws.on('close', () => this.emit('disconnect'));
+			this.disconnect = this.ws.close;
+			this.connect = this.ws.connect;
+			this.connected = false;
+
+			this.ws.firstConnect = false;
+			this.ws.on('open', () => {
+				this.ws.firstConnect = true;
+				this.connected = true;
+
+				this.emit('connected');
+			});
+
+			this.ws.on('close', () => {
+				this.connected = false;
+				if (this.ws.firstConnect) this.emit('disconnect');
+			});
 		}
 	}
 
