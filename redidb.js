@@ -1,7 +1,7 @@
 const Collection = require('./lib/Collection');
 const EventEmitter = require('events');
 const WebSocket = require('ws');
-const PWS = require('pws')
+const PWS = require('pws');
 
 module.exports = class redidb extends EventEmitter {
 	constructor(argv) {
