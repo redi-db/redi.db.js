@@ -53,11 +53,20 @@ declare class RediDB {
 
 	/**
 	 * Create a collection for the database
-	 * @param {string} database - Name of database
+	 * @param {string} database - Name of database{}
 	 * @param {string} collection - Name of collection
+	 * @param {object} {retryAfter: number, maxRetries: number} - Parameters for requests manager
 	 * @return {Collection} - Collection manager
 	 */
-	create(database: string, collection: string): Collection;
+
+	create(
+		database: string,
+		collection: string,
+		options: {
+			retryAfter: number;
+			maxRetries: number;
+		} = { retryAfter: 30, maxRetries: 3 }
+	): Collection;
 
 	/**
 	 * Connect to the server if the connection is broken or not initialized

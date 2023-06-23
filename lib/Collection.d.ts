@@ -11,9 +11,14 @@ declare class Collection {
 		{
 			database: string,
 			collection,
+			options,
 		}: {
 			database: string;
 			collection: string;
+			options: {
+				retryAfter: number;
+				maxRetries: number;
+			};
 		}
 	);
 

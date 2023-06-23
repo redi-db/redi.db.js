@@ -39,10 +39,16 @@ module.exports = class redidb extends EventEmitter {
 		}
 	}
 
-	create(database, collection) {
+	create(database, collection, options = { retryAfter: 30, maxRetries: 3 }) {
+		if (typeof options.retryAfter != 'number') options.retryAfter = 30;
+		if (typeof options.maxRetries != 'number') options.maxRetries = 3;
+
+		if (options.retryAfter < 0) throw new Error('<retryAfter> must be >= 0')
+		if (options.maxRetries < 0) throw new Error('<maxRetries> must be >= 0')
+
 		return new Collection(this, {
 			database,
 			collection,
-		});
+		}, options);
 	}
 };
