@@ -7,14 +7,14 @@ interface Base {
 		by: string;
 	};
 
-	$text?:
+	$regex?:
 		| {
 				by: string;
-				value: string;
+				value: RegExp | string;
 		  }
 		| {
 				by: string;
-				value: string;
+				value: RegExp | string;
 		  }[];
 
 	$ne?:
@@ -48,6 +48,7 @@ interface Base {
 }
 
 export default interface IFilter<T extends IFilterWithoutMax> extends Base {
+	$and?: Base | Base[];
 	$or?: (Partial<Omit<T, '$save' | '$delete'>> | IFilterWithoutMax)[];
 }
 
