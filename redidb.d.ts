@@ -1,6 +1,8 @@
 import PWS from 'pws';
 import Collection from './lib/Collection';
 import argv from './types/argv';
+import IDeleteRequest from './types/deleteRequest';
+import IUpdateRequest from './types/updateRequest';
 
 export = RediDB;
 declare class RediDB {
@@ -55,18 +57,10 @@ declare class RediDB {
 	 * Create a collection for the database
 	 * @param {string} database - Name of database{}
 	 * @param {string} collection - Name of collection
-	 * @param {object} {retryAfter: number, maxRetries: number} - Parameters for requests manager
 	 * @return {Collection} - Collection manager
 	 */
 
-	create(
-		database: string,
-		collection: string,
-		options: {
-			retryAfter: number;
-			maxRetries: number;
-		} = { retryAfter: 30, maxRetries: 3 }
-	): Collection;
+	create(database: string, collection: string): Collection;
 
 	/**
 	 * Connect to the server if the connection is broken or not initialized
@@ -87,6 +81,6 @@ declare class RediDB {
 export interface IDocument {
 	readonly _id?: string;
 
-	$save(instant: boolean = false): Promise<any>;
-	$delete(): Promise<any>;
+	$save(instant: boolean = false): Promise<IUpdateRequest>;
+	$delete(): Promise<IDeleteRequest>;
 }
