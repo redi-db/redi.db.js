@@ -1,6 +1,6 @@
 {
     "name": "redi.db.js",
-    "version": "4.1.7",
+    "version": "4.1.8",
     "description": "Library for working with RediDB in Node.js",
     "main": "redidb.js",
     "types": "redidb.d.ts",
@@ -21,8 +21,8 @@
     "homepage": "https://github.com/redi-db/redi.db.js#readme",
     "dependencies": {
         "@types/axios": "^0.14.0",
-        "axios": "^1.5.0",
+        "axios": "^1.5.1",
         "pws": "^7.0.0",
-        "ws": "^8.13.0"
+        "ws": "^8.14.2"
     }
 }
