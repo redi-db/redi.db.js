@@ -248,30 +248,10 @@ module.exports.Document = class Document {
 		filter = getFilters(filter);
 		this.#validateModel(filter, true);
 
-		if (!filter['$lt'] || !filter['$gt']) filter['$max'] = 1;
-		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
-				const requestID = generateUpdateID();
-				this.#queue.set(requestID, {
-					updateID: requestID,
+		if (!filter['$lt'] && !filter['$gt']) filter['$max'] = 1;
 
-					resolve: ({ data }) => (!data.length ? resolve(null) : resolve(new DatabaseDocument(data[0], this))),
-					reject,
-				});
-
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'search', filter, requestID, ...this.#data }));
-			});
-
-		const { data } = await axios.post(`${this.#client.link}/search`, {
-			filter,
-			...this.#client.authorization,
-			...this.#data,
-		});
-
-		requestHasError(data);
-
-		if (data.length == 0) return null;
-		return new DatabaseDocument(data[0], this);
+		const data = await this.search(filter);
+		return data.length ? data[0] : null;
 	}
 
 	/**
