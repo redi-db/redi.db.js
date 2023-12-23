@@ -90,7 +90,7 @@ module.exports.Document = class Document {
 	#data;
 
 	constructor(client, database, collection, model) {
-		if (!(client instanceof module.exports.Client)) throw new Error('Invalid client');
+		if (!(client instanceof module.exports.RediClient)) throw new Error('Invalid client');
 		if (!database || typeof database != 'string') throw new Error('Invalid database name');
 		if (!collection || typeof collection != 'string') throw new Error('Invalid collection name');
 
@@ -137,12 +137,14 @@ module.exports.Document = class Document {
 		}
 	}
 
-	#validateModel(data, isFilter = false, model = undefined) {
+	#validateModel(data, isFilter = false, model = undefined, _id = false) {
 		if (isFilter && !data) return;
 		if ((!isFilter && !data) || (!isFilter && typeof data !== 'object')) throw new Error('Invalid data for model validation');
 
 		const validationModel = model || this.#model;
 		for (const key in validationModel) {
+			if (_id && key == '_id') continue;
+
 			const actualType = typeof data[key];
 			const expectedType = typeof validationModel[key];
 			const isObject = expectedType === 'object' && validationModel[key] !== null;
@@ -150,8 +152,15 @@ module.exports.Document = class Document {
 			if (isFilter && actualType == 'function' && key.startsWith('$')) continue;
 			if (isObject && !Array.isArray(validationModel[key])) this.#validateModel(data[key], isFilter, validationModel[key]);
 			else if (isObject && isFilter && Array.isArray(validationModel[key]) && actualType == 'undefined') continue;
-			else if (isObject && Array.isArray(validationModel[key]) && !validationModel[key].map(type => (type == null ? 'null' : typeof type())).includes(actualType == 'object' ? 'null' : actualType)) throw new Error(`Invalid type for property "${key}". Expected ${validationModel[key].map(type => (type == null ? 'null' : typeof type())).join(' or ')}, got ${actualType}`);
-			else if (!Array.isArray(validationModel[key])) {
+			else if (isObject && Array.isArray(validationModel[key]) && !validationModel[key].map(type => (type == null ? 'null' : validationModel[key] == Array ? 'array' : typeof type())).includes(actualType == 'object' ? (Array.isArray(data[key]) ? 'array' : 'null') : actualType)) {
+				console.log(
+					key,
+					validationModel[key].map(type => (type == null ? 'null' : validationModel[key] == Array ? 'array' : typeof type())),
+
+					actualType == 'object' ? (Array.isArray(data[key]) ? 'array' : 'null') : actualType
+				);
+				throw new Error(`Invalid type for property "${key}". Expected ${validationModel[key].map(type => (type == null ? 'null' : Array.isArray(validationModel[key]) ? 'array' : typeof type())).join(' or ')}, got ${actualType}`);
+			} else if (!Array.isArray(validationModel[key])) {
 				const expectedTypeForProperty = isObject ? 'object' : validationModel[key] != null ? typeof validationModel[key]() : null;
 
 				if (isFilter && actualType == 'undefined') continue;
@@ -169,7 +178,7 @@ module.exports.Document = class Document {
 	 * @returns {Promise<{_id: string, created: true, reason?: string}[]>} The created document or an array of created documents.
 	 */
 	async create(...objects) {
-		for (const object of objects) this.#validateModel(object);
+		for (const object of objects) this.#validateModel(object, false, undefined, true);
 		if (this.#client.method == 'WS')
 			return new Promise((resolve, reject) => {
 				const requestID = generateUpdateID();

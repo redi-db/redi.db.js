@@ -5,8 +5,10 @@ import type IFilter from './types/filter';
 import type RecursivePartial from './types/recursivePartial';
 import type IUpdateRequest from './types/updateRequest';
 
-type ReturnModelType = BooleanConstructor | NumberConstructor | StringConstructor | null;
-type DatabaseDocument<T> = {
+type ReturnModelType = ArrayConstructor | BooleanConstructor | NumberConstructor | StringConstructor | null;
+type ModelType = ReturnModelType | Array<ReturnModelType>;
+
+export type DatabaseDocument<T> = {
 	[key in keyof T]: T[key];
 } & {
 	_id: string;
@@ -15,10 +17,8 @@ type DatabaseDocument<T> = {
 	$delete(): Promise<IDeleteRequest>;
 };
 
-type ModelType = ReturnModelType | Array<ReturnModelType>;
-
 export type Model<T> = {
-	[key in keyof T]: T[key] extends Record<string, any> ? Model<T[key]> : ModelType;
+	[key in keyof T]: T[key] extends Array ? Array : T[key] extends Record<string, any> ? Model<T[key]> : ModelType;
 };
 
 export { Document, RediClient };
@@ -100,14 +100,14 @@ declare class Document<T> {
 	 * @param {IFilter<T> & RecursivePartial<T>} filter - Filters for the search.
 	 * @returns {Promise<DatabaseDocument<T>[]>} - A promise that resolves with a list of found documents.
 	 */
-	search(filter?: IFilter<T> & RecursivePartial<T>): Promise<DatabaseDocument<T>[]>;
+	search(filter?: IFilter<T> & RecursivePartial<T & { _id?: string }>): Promise<DatabaseDocument<T>[]>;
 
 	/**
 	 * Searches for a single document in the collection based on the provided filters.
 	 * @param {IFilter<T> & RecursivePartial<T>} filter - Filters for the search.
 	 * @returns {Promise<DatabaseDocument<T> | null>} - A promise that resolves with the found document or null if the document is not found.
 	 */
-	searchOne(filter?: IFilter<T> & RecursivePartial<T>): Promise<DatabaseDocument<T> | null>;
+	searchOne(filter?: IFilter<T> & RecursivePartial<T & { _id?: string }>): Promise<DatabaseDocument<T> | null>;
 
 	/**
 	 * Updates documents in the collection that match the given filters.
@@ -115,7 +115,7 @@ declare class Document<T> {
 	 * @param {RecursivePartial<T>} update - Updated fields of the documents.
 	 * @returns {Promise<IUpdateRequest[]>} - A promise that resolves after updating the documents.
 	 */
-	update(filter: IFilter<T> & RecursivePartial<T>, update: RecursivePartial<T>): Promise<IUpdateRequest[]>;
+	update(filter: IFilter<T> & RecursivePartial<T & { _id?: string }>, update: RecursivePartial<T>): Promise<IUpdateRequest[]>;
 
 	/**
 	 * Performs instant updates on documents in the collection that match the given filters.
@@ -124,7 +124,7 @@ declare class Document<T> {
 	 * @param {RecursivePartial<T>} update - Updated fields of the documents.
 	 * @returns {Promise<IUpdateRequest[]>} - A promise that resolves after updating the documents.
 	 */
-	instantUpdate(filter: IFilter<T> & RecursivePartial<T>, update: RecursivePartial<T>): Promise<IUpdateRequest[]>;
+	instantUpdate(filter: IFilter<T> & RecursivePartial<T & { _id?: string }>, update: RecursivePartial<T>): Promise<IUpdateRequest[]>;
 
 	/**
 	 * Searches for a document in the collection based on the provided filters, and creates the document if it doesn't exist.
@@ -132,19 +132,19 @@ declare class Document<T> {
 	 * @param {T} create - Data for creating the document (if it doesn't exist).
 	 * @returns {Promise<{ created: boolean; data: DatabaseDocument<T> }>} - A promise that resolves with an object containing the information about whether the document was created and the data of the document.
 	 */
-	searchOrCreate(filter?: IFilter<T> & RecursivePartial<T>, create: T): Promise<{ created: boolean; data: DatabaseDocument<T> }>;
+	searchOrCreate(filter?: IFilter<T> & RecursivePartial<T & { _id?: string }>, create: T): Promise<{ created: boolean; data: DatabaseDocument<T> }>;
 
 	/**
 	 * Deletes documents in the collection based on the provided filters.
 	 * @param {IFilter<T> & RecursivePartial<T>} filter - Filters for the delete operation.
 	 * @returns {Promise<IDeleteRequest[]>} - A promise that resolves after deleting the documents.
 	 */
-	delet(filter?: IFilter<T> & RecursivePartial<T>): Promise<IDeleteRequest[]>;
+	delete(filter?: IFilter<T> & RecursivePartial<T & { _id?: string }>): Promise<IDeleteRequest[]>;
 
 	/**
 	 * Counts the number of documents in the collection based on the provided filters.
 	 * @param {IFilter<T> & RecursivePartial<T>} filter - Filters for the count operation.
 	 * @returns {Promise<number>} - A promise that resolves with the count of documents in collection.
 	 */
-	count(filter?: IFilter<T> & RecursivePartial<T>): Promise<number>;
+	count(filter?: IFilter<T> & RecursivePartial<T & { _id?: string }>): Promise<number>;
 }

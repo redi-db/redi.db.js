@@ -123,7 +123,7 @@ await found.$delete(); // Return { _id: ..., deleted: true / false }
 **⌨️ TypeScript support**
 
 ```ts
-import { Document, RediClient, type Model } from 'redi.db.js';
+import { Document, RediClient, type DatabaseDocument, type Model } from 'redi.db.js';
 
 const client = new RediClient({
 	ip: '0.0.0.0',
@@ -139,6 +139,7 @@ const client = new RediClient({
 type UserModel = {
 	id: string | number;
 	data: {
+		messages: string[];
 		status: boolean;
 	};
 };
@@ -152,13 +153,19 @@ const UserDocuments = new (class UserDocuments extends Document<UserModel> {
 		return {
 			id: [Number, String],
 			data: {
+				messages: Array,
 				status: Boolean,
 			},
 		};
 	}
+
+	// Type your function with returning documents
+	async getByStatus(): Promise<DatabaseDocument<UserModel>[]> {
+		return await this.search({ data: { status: true } });
+	}
 })();
 
-client.on('connected', () => {
+client.on('connected', async () => {
 	console.log('Connected to redidb!');
 
 	const user = await UserDocuments.searchOne({ id: 1 });
