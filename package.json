@@ -1,28 +1,31 @@
 {
-    "name": "redi.db.js",
-    "version": "4.1.9",
-    "description": "Library for working with RediDB in Node.js",
-    "main": "redidb.js",
-    "types": "redidb.d.ts",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/redi-db/redi.db.js.git"
-    },
-    "keywords": [
-        "db",
-        "database-utilities",
-        "redidb"
-    ],
-    "author": "redi-db",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/redi-db/redi.db.js/issues"
-    },
-    "homepage": "https://github.com/redi-db/redi.db.js#readme",
-    "dependencies": {
-        "@types/axios": "^0.14.0",
-        "axios": "^1.5.1",
-        "pws": "^7.0.0",
-        "ws": "^8.14.2"
-    }
+	"name": "redi.db.js",
+	"version": "5.0.0",
+	"description": "Library for working with RediDB in Node.js",
+	"main": "redi-db.js",
+	"types": "redi-db.d.ts",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/redi-db/redi.db.js.git"
+	},
+	"keywords": [
+		"db",
+		"database-utilities",
+		"redidb"
+	],
+	"author": "redi-db",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/redi-db/redi.db.js/issues"
+	},
+	"homepage": "https://github.com/redi-db/redi.db.js#readme",
+	"dependencies": {
+		"axios": "^1.6.2",
+		"events": "^3.3.0",
+		"pws": "^7.0.0",
+		"ws": "^8.15.1"
+	},
+	"devDependencies": {
+		"@types/axios": "^0.14.0"
+	}
 }

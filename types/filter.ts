@@ -1,3 +1,5 @@
+import type RecursivePartial from './recursivePartial';
+
 interface Base {
 	$max?: number;
 	$only?: string[];
@@ -47,11 +49,11 @@ interface Base {
 		  }[];
 }
 
-export default interface IFilter<T extends IFilterWithoutMax> extends Base {
-	$and?: Base | Base[];
-	$or?: (Partial<Omit<T, '$save' | '$delete'>> | IFilterWithoutMax)[];
+export default interface IFilter<T extends IFilterWithoutMax> extends RecursivePartial<Base> {
+	$and?: RecursivePartial<Base> | RecursivePartial<Base>[];
+	$or?: (RecursivePartial<Omit<T, '$save' | '$delete'>> | IFilterWithoutMax)[];
 }
 
-export interface IFilterWithoutMax extends Omit<Base, '$max'> {
+interface IFilterWithoutMax extends RecursivePartial<Omit<Base, '$max'>> {
 	[key: string]: any;
 }

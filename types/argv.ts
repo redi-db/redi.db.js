@@ -1,4 +1,4 @@
-export default interface Params {
+export default interface IParams {
 	ip: string;
 	port: number;
 
@@ -6,6 +6,5 @@ export default interface Params {
 	password: string;
 
 	websocket: boolean;
-
 	useSSL?: false;
 }
