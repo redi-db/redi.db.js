@@ -84,17 +84,19 @@ function getFilters(filter = {}) {
 }
 
 module.exports.Document = class Document {
+	#validatorDisabled;
 	#client;
 	#model;
 	#queue;
 	#data;
 
-	constructor(client, database, collection, model) {
+	constructor(client, database, collection, model, disableValidator = false) {
 		if (!(client instanceof module.exports.RediClient)) throw new Error('Invalid client');
 		if (!database || typeof database != 'string') throw new Error('Invalid database name');
 		if (!collection || typeof collection != 'string') throw new Error('Invalid collection name');
 
 		this.#client = client;
+		this.#validatorDisabled = disableValidator;
 		this.#model = { ...model, _id: String };
 		this.#data = {
 			database,
@@ -138,6 +140,7 @@ module.exports.Document = class Document {
 	}
 
 	#validateModel(data, isFilter = false, model = undefined, _id = false) {
+		if (this.#validatorDisabled) return;
 		if (isFilter && !data) return;
 		if ((!isFilter && !data) || (!isFilter && typeof data !== 'object')) throw new Error('Invalid data for model validation');
 

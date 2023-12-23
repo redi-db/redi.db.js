@@ -38,7 +38,7 @@ client.on('error', ({ error }) => {
 ```js
 const MyDocuments = new (class MyDocuments extends Document {
 	constructor() {
-		super(client, 'MyDatabase', 'MyCollection', MyDocuments.getDefaultModel());
+		super(client, 'MyDatabase', 'MyCollection', MyDocuments.getDefaultModel(), false);
 	}
 
 	static getDefaultModel() {
@@ -146,7 +146,7 @@ type UserModel = {
 
 const UserDocuments = new (class UserDocuments extends Document<UserModel> {
 	constructor() {
-		super(client, 'MyProject', 'Users', UserDocuments.getDefaultModel());
+		super(client, 'MyProject', 'Users', UserDocuments.getDefaultModel(), false);
 	}
 
 	static getDefaultModel(): Model<UserModel> {

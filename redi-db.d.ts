@@ -87,7 +87,7 @@ declare class RediClient {
 }
 
 declare class Document<T> {
-	constructor(client: RediClient, database: string, collection: string, model: Model<T>);
+	constructor(client: RediClient, database: string, collection: string, model: Model<T>, disableValidator: boolean = false);
 	/**
 	 * Creates new documents in the collection
 	 * @param {...T} objects - Objects representing the new documents.
