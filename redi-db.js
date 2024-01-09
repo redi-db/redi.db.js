@@ -6,6 +6,7 @@ const WebSocket = require('ws');
 const axios = require('axios');
 const PWS = require('pws');
 
+const CONNECTION_CHECK_INTERVAL = 1000;
 module.exports.RediClient = class DatabaseClient extends EventEmitter {
 	constructor(argv) {
 		super();
@@ -183,7 +184,17 @@ module.exports.Document = class Document {
 	async create(...objects) {
 		for (const object of objects) this.#validateModel(object, false, undefined, true);
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 
 				this.#queue.set(requestID, {
@@ -215,13 +226,23 @@ module.exports.Document = class Document {
 		this.#validateModel(filter, true);
 
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 
 				this.#queue.set(requestID, {
 					updateID: requestID,
 
-					resolve: ({ data }) => resolve(data.map(document => new DatabaseDocument(document, this))),
+					resolve: ({ data }) => resolve(data.slice(0, filter['$max'] || undefined).map(document => new DatabaseDocument(document, this))),
 					reject,
 				});
 
@@ -249,6 +270,7 @@ module.exports.Document = class Document {
 		this.#validateModel(filter, true);
 
 		if (!filter['$lt'] && !filter['$gt']) filter['$max'] = 1;
+		else if (filter['$max']) delete filter['$max'];
 
 		const data = await this.search(filter);
 		return data.length ? data[0] : null;
@@ -270,7 +292,17 @@ module.exports.Document = class Document {
 		this.#validateModel(update, true);
 
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 				this.#queue.set(requestID, {
 					updateID: requestID,
@@ -310,7 +342,17 @@ module.exports.Document = class Document {
 		this.#validateModel(update, true);
 
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 				this.#queue.set(requestID, {
 					updateID: requestID,
@@ -349,7 +391,17 @@ module.exports.Document = class Document {
 		this.#validateModel(create, true);
 
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 				this.#queue.set(requestID, {
 					updateID: requestID,
@@ -391,7 +443,17 @@ module.exports.Document = class Document {
 		this.#validateModel(filter, true);
 
 		if (this.#client.method == 'WS')
-			return new Promise((resolve, reject) => {
+			return new Promise(async (resolve, reject) => {
+				if (!this.#client.connected)
+					await new Promise(resolve => {
+						const interval = setInterval(() => {
+							if (this.#client.connected) {
+								clearInterval(interval);
+								resolve();
+							}
+						}, CONNECTION_CHECK_INTERVAL);
+					});
+
 				const requestID = generateUpdateID();
 				this.#queue.set(requestID, {
 					updateID: requestID,
