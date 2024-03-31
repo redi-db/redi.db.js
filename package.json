@@ -1,6 +1,6 @@
 {
 	"name": "redi.db.js",
-	"version": "5.0.4",
+	"version": "5.0.5",
 	"description": "Library for working with RediDB in Node.js",
 	"main": "redi-db.js",
 	"types": "redi-db.d.ts",

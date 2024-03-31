@@ -21,6 +21,8 @@ module.exports.RediClient = class DatabaseClient extends EventEmitter {
 		};
 
 		if (this.method == 'WS') {
+			this.setMaxListeners(Infinity);
+
 			this.clientID = clients.add(new PWS(this.link, WebSocket));
 			this.disconnect = clients.get(this.clientID).close;
 			this.connect = clients.get(this.clientID).connect;
