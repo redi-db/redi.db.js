@@ -300,7 +300,7 @@ module.exports.Document = class Document {
 
 							resolve(this.#distributors.get(_distributorID).documents);
 							this.#distributors.delete(_distributorID);
-						} else resolve(distributorID ? { residue, data } : data.slice(0, filter['$max'] || undefined).map(document => new DatabaseDocument(document, this)));
+						} else resolve(distributorID ? { residue, data } : data.map(document => new DatabaseDocument(document, this)));
 					},
 
 					reject,
@@ -344,8 +344,7 @@ module.exports.Document = class Document {
 		filter = getFilters(filter);
 		this.#validateModel(filter, true);
 
-		if (!filter['$lt'] && !filter['$gt']) filter['$max'] = 1;
-		else if (filter['$max']) delete filter['$max'];
+		filter['$max'] = 1;
 
 		const data = await this.search(filter);
 		return data.length ? data[0] : null;
