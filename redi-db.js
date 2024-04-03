@@ -7,6 +7,8 @@ const axios = require('axios');
 const PWS = require('pws');
 
 const CONNECTION_CHECK_INTERVAL = 1000;
+const DISTRIBUTOR_ERROR = new Error('distributorID accept only string');
+
 module.exports.RediClient = class DatabaseClient extends EventEmitter {
 	constructor(argv) {
 		super();
@@ -88,6 +90,7 @@ function getFilters(filter = {}) {
 
 module.exports.Document = class Document {
 	#validatorDisabled;
+	#distributors;
 	#client;
 	#model;
 	#queue;
@@ -108,8 +111,9 @@ module.exports.Document = class Document {
 
 		if (this.#client.method == 'WS') {
 			this.#queue = new Map();
+			this.#distributors = new Map();
 
-			clients.get(this.#client.clientID).on('message', byteData => {
+			clients.get(this.#client.clientID).on('message', async byteData => {
 				try {
 					const data = JSON.parse(byteData);
 					const request = this.#queue.get(data.requestID);
@@ -180,10 +184,14 @@ module.exports.Document = class Document {
 
 	/**
 	 * Create documents.
-	 * @param {...Object} objects - Objects to create.
+	 * @param {...object} objects - Objects to create.
 	 * @returns {Promise<{_id: string, created: true, reason?: string}[]>} The created document or an array of created documents.
 	 */
 	async create(...objects) {
+		return this._create(objects);
+	}
+
+	async _create(objects, distributorID = undefined) {
 		for (const object of objects) this.#validateModel(object, false, undefined, true);
 		if (this.#client.method == 'WS')
 			return new Promise(async (resolve, reject) => {
@@ -201,31 +209,65 @@ module.exports.Document = class Document {
 
 				this.#queue.set(requestID, {
 					updateID: requestID,
-					resolve: ({ data }) => resolve(data),
+					resolve: async ({ data, residue, distributorID: _distributorID }) => {
+						if (data === null && _distributorID.length) {
+							this.#distributors.set(_distributorID, { documents: [], residue: !residue ? 1 : residue });
+
+							while (this.#distributors.get(_distributorID).residue > 0) {
+								const distributor = this.#distributors.get(_distributorID);
+								const response = await this._create([], _distributorID);
+
+								distributor.documents.push(...response.data);
+								distributor.residue = response.residue;
+							}
+
+							resolve(this.#distributors.get(_distributorID).documents);
+							this.#distributors.delete(_distributorID);
+						} else resolve(distributorID ? { residue, data } : data);
+					},
 					reject,
 				});
 
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'create', data: objects, requestID, ...this.#data }));
+				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'create', data: objects, requestID, distributorID, ...this.#data }));
 			});
 
 		const { data } = await axios.post(`${this.#client.link}/create`, {
 			data: objects,
+			distributorID,
+
 			...this.#client.authorization,
 			...this.#data,
 		});
 
 		requestHasError(data);
-		return data.data;
+
+		if (data.distribute || data.data) {
+			if (distributorID) {
+				return { data: data.data, residue: data.residue };
+			} else if (data.distribute) {
+				let [distributor, id, response] = [1, data.distributorID, []];
+				while (distributor > 0) {
+					const { residue, data: documents } = await this._create([], id);
+					distributor = residue;
+					response.push(...documents);
+				}
+
+				return response;
+			}
+		} else return data;
 	}
 
 	/**
 	 * Search documents.
 	 * @param {object} filter - Filter to search.
+	 * @param {string} distributorID - Distributor ID if exits.
 	 * @returns {Promise<SearchResultItem[]>} The searched documents as an array.
 	 */
-	async search(filter = {}) {
+	async search(filter = {}, distributorID = undefined) {
 		filter = getFilters(filter);
 		this.#validateModel(filter, true);
+
+		if (distributorID && typeof distributorID != 'string') throw DISTRIBUTOR_ERROR;
 
 		if (this.#client.method == 'WS')
 			return new Promise(async (resolve, reject) => {
@@ -244,22 +286,53 @@ module.exports.Document = class Document {
 				this.#queue.set(requestID, {
 					updateID: requestID,
 
-					resolve: ({ data }) => resolve(data.slice(0, filter['$max'] || undefined).map(document => new DatabaseDocument(document, this))),
+					resolve: async ({ data, residue, distributorID: _distributorID }) => {
+						if (data === null && _distributorID.length) {
+							this.#distributors.set(_distributorID, { documents: [], residue: !residue ? 1 : residue });
+
+							while (this.#distributors.get(_distributorID).residue > 0) {
+								const distributor = this.#distributors.get(_distributorID);
+								const response = await this.search({}, _distributorID);
+
+								distributor.documents.push(...response.data);
+								distributor.residue = response.residue;
+							}
+
+							resolve(this.#distributors.get(_distributorID).documents);
+							this.#distributors.delete(_distributorID);
+						} else resolve(distributorID ? { residue, data } : data.slice(0, filter['$max'] || undefined).map(document => new DatabaseDocument(document, this)));
+					},
+
 					reject,
 				});
 
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'search', filter, requestID, ...this.#data }));
+				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'search', filter, requestID, distributorID, ...this.#data }));
 			});
 
 		const { data } = await axios.post(`${this.#client.link}/search`, {
 			filter,
+			distributorID,
 
 			...this.#client.authorization,
 			...this.#data,
 		});
 
 		requestHasError(data);
-		return data.map(document => new DatabaseDocument(document, this));
+
+		if (data.distribute || data.data) {
+			if (distributorID) {
+				return { data: data.data, residue: data.residue };
+			} else if (data.distribute) {
+				let [distributor, id, response] = [1, data.distributorID, []];
+				while (distributor > 0) {
+					const { residue, data: documents } = await this.search({}, id);
+					distributor = residue;
+					response.push(...documents);
+				}
+
+				return response.map(document => new DatabaseDocument(document, this));
+			}
+		} else return data.map(document => new DatabaseDocument(document, this));
 	}
 
 	/**
@@ -287,7 +360,8 @@ module.exports.Document = class Document {
 	 * @throws {Error} Throws an error if the update operation fails.
 	 */
 
-	async update(filter = {}, update = {}) {
+	async update(filter = {}, update = {}, distributorID = undefined) {
+		if (distributorID && typeof distributorID != 'string') throw DISTRIBUTOR_ERROR;
 		filter = getFilters(filter);
 
 		this.#validateModel(filter, true);
@@ -309,11 +383,26 @@ module.exports.Document = class Document {
 				this.#queue.set(requestID, {
 					updateID: requestID,
 
-					resolve: ({ data }) => resolve(data),
+					resolve: async ({ data, residue, distributorID: _distributorID }) => {
+						if (data === null && _distributorID.length) {
+							this.#distributors.set(_distributorID, { documents: [], residue: !residue ? 1 : residue });
+
+							while (this.#distributors.get(_distributorID).residue > 0) {
+								const distributor = this.#distributors.get(_distributorID);
+								const response = await this.update({}, {}, _distributorID);
+
+								distributor.documents.push(...response.data);
+								distributor.residue = response.residue;
+							}
+
+							resolve(this.#distributors.get(_distributorID).documents);
+							this.#distributors.delete(_distributorID);
+						} else resolve(distributorID ? { residue, data } : data);
+					},
 					reject,
 				});
 
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'update', data: [update], filter, requestID, ...this.#data }));
+				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'update', data: [update], filter, requestID, distributorID, ...this.#data }));
 			});
 
 		const { data } = await axios.patch(this.#client.link, {
@@ -321,12 +410,27 @@ module.exports.Document = class Document {
 				filter,
 				update,
 			},
+
+			distributorID,
 			...this.#client.authorization,
 			...this.#data,
 		});
 
 		requestHasError(data);
-		return data;
+		if (data.distribute || data.data) {
+			if (distributorID) {
+				return { data: data.data, residue: data.residue };
+			} else if (data.distribute) {
+				let [distributor, id, response] = [1, data.distributorID, []];
+				while (distributor > 0) {
+					const { residue, data: documents } = await this.update({}, {}, id);
+					distributor = residue;
+					response.push(...documents);
+				}
+
+				return response;
+			}
+		} else return data;
 	}
 
 	/**
@@ -337,7 +441,8 @@ module.exports.Document = class Document {
 	 * @returns {Promise<SaveResult[]>} A promise that resolves to the instantly updated document or null if not found.
 	 * @throws {Error} Throws an error if the instant update operation fails.
 	 */
-	async instantUpdate(filter = {}, update = {}) {
+	async instantUpdate(filter = {}, update = {}, distributorID = undefined) {
+		if (distributorID && typeof distributorID != 'string') throw DISTRIBUTOR_ERROR;
 		filter = getFilters(filter);
 
 		this.#validateModel(filter, true);
@@ -359,11 +464,26 @@ module.exports.Document = class Document {
 				this.#queue.set(requestID, {
 					updateID: requestID,
 
-					resolve: ({ data }) => resolve(data),
+					resolve: async ({ data, residue, distributorID: _distributorID }) => {
+						if (data === null && _distributorID.length) {
+							this.#distributors.set(_distributorID, { documents: [], residue: !residue ? 1 : residue });
+
+							while (this.#distributors.get(_distributorID).residue > 0) {
+								const distributor = this.#distributors.get(_distributorID);
+								const response = await this.instantUpdate({}, {}, _distributorID);
+
+								distributor.documents.push(...response.data);
+								distributor.residue = response.residue;
+							}
+
+							resolve(this.#distributors.get(_distributorID).documents);
+							this.#distributors.delete(_distributorID);
+						} else resolve(distributorID ? { residue, data } : data);
+					},
 					reject,
 				});
 
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'instantUpdate', data: [update], filter, requestID, ...this.#data }));
+				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'instantUpdate', data: [update], filter, requestID, distributorID, ...this.#data }));
 			});
 
 		const { data } = await axios.put(this.#client.link, {
@@ -371,12 +491,28 @@ module.exports.Document = class Document {
 				filter,
 				update,
 			},
+
+			distributorID,
 			...this.#client.authorization,
 			...this.#data,
 		});
 
 		requestHasError(data);
-		return data;
+
+		if (data.distribute || data.data) {
+			if (distributorID) {
+				return { data: data.data, residue: data.residue };
+			} else if (data.distribute) {
+				let [distributor, id, response] = [1, data.distributorID, []];
+				while (distributor > 0) {
+					const { residue, data: documents } = await this.instantUpdate({}, {}, id);
+					distributor = residue;
+					response.push(...documents);
+				}
+
+				return response;
+			}
+		} else return data;
 	}
 	/**
 	 * Search for a document using the specified filter, and if not found, create a new document with the provided data.
@@ -440,8 +576,11 @@ module.exports.Document = class Document {
 	 * @returns {Promise<DeleteResult[]>} A promise that resolves to the result of the delete operation.
 	 * @throws {Error} Throws an error if the delete operation fails.
 	 */
-	async delete(filter = {}) {
+	async delete(filter = {}, distributorID = undefined) {
+		console.log(distributorID);
+		if (distributorID && typeof distributorID != 'string') throw DISTRIBUTOR_ERROR;
 		filter = getFilters(filter);
+
 		this.#validateModel(filter, true);
 
 		if (this.#client.method == 'WS')
@@ -460,21 +599,53 @@ module.exports.Document = class Document {
 				this.#queue.set(requestID, {
 					updateID: requestID,
 
-					resolve: ({ data }) => resolve(data),
+					resolve: async ({ data, residue, distributorID: _distributorID }) => {
+						if (data === null && _distributorID.length) {
+							this.#distributors.set(_distributorID, { documents: [], residue: !residue ? 1 : residue });
+
+							while (this.#distributors.get(_distributorID).residue > 0) {
+								const distributor = this.#distributors.get(_distributorID);
+								const response = await this.delete({}, _distributorID);
+
+								distributor.documents.push(...response.data);
+								distributor.residue = response.residue;
+							}
+
+							resolve(this.#distributors.get(_distributorID).documents);
+							this.#distributors.delete(_distributorID);
+						} else resolve(distributorID ? { residue, data } : data);
+					},
 					reject,
 				});
 
-				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'delete', filter, requestID, ...this.#data }));
+				clients.get(this.#client.clientID).send(JSON.stringify({ method: 'delete', filter, requestID, distributorID, ...this.#data }));
 			});
 
 		const { data } = await axios.delete(this.#client.link, {
-			filter,
-			...this.#client.authorization,
-			...this.#data,
+			data: {
+				filter,
+				distributorID,
+
+				...this.#client.authorization,
+				...this.#data,
+			},
 		});
 
 		requestHasError(data);
-		return data;
+		if (data.distribute || data.data) {
+			if (distributorID) {
+				return { data: data.data, residue: data.residue };
+			} else if (data.distribute) {
+				let [distributor, id, response] = [1, data.distributorID, []];
+				while (distributor > 0) {
+					const { residue, data: documents } = await this.delete({}, id);
+					distributor = residue;
+					response.push(...documents);
+				}
+
+				return response;
+			}
+		} else return data;
 	}
 
 	/**
