@@ -54,6 +54,9 @@ const MyDocuments = new (class MyDocuments extends Document {
 		return this.search({ data: { status: true } });
 	}
 })();
+
+// By using your class, you are not violating the DRY principle by using "searchWithStatus" in different parts of the code. However, you can do without such deep nesting:
+const MyDocuments = new Document(client, 'MyDatabase', 'MyCollection', { id: [Number, String], data: { status: Boolean } }, false);
 ```
 
 **👕 Create a user in the corresponding collection**

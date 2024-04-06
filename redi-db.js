@@ -576,7 +576,6 @@ module.exports.Document = class Document {
 	 * @throws {Error} Throws an error if the delete operation fails.
 	 */
 	async delete(filter = {}, distributorID = undefined) {
-		console.log(distributorID);
 		if (distributorID && typeof distributorID != 'string') throw DISTRIBUTOR_ERROR;
 		filter = getFilters(filter);
 
