@@ -9,6 +9,11 @@ interface Base {
 		by: string;
 	};
 
+	$arr?: {
+		by: string;
+		value: number | boolean | string | { [key: string]: any };
+	};
+
 	$regex?:
 		| {
 				by: string;
@@ -50,7 +55,7 @@ interface Base {
 }
 
 export default interface IFilter<T extends IFilterWithoutMax> extends RecursivePartial<Base> {
-	$and?: RecursivePartial<Base> | RecursivePartial<Base>[];
+	$and?: RecursivePartial<T & Base> | RecursivePartial<T & Base>[];
 	$or?: (RecursivePartial<Omit<T, '$save' | '$delete'>> | IFilterWithoutMax)[];
 }
 
